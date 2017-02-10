@@ -2,17 +2,14 @@ var socket = io();
 
 /* Entré du pseudo */
 $('#login form').submit(function (e){
-    e.preventDefault();
-    var user = {
-        username : $('#login input').val().trim()
-    };
-    if(user.username.length > 0){
-        socket.emit('user-login', user);
-        $('body').removeAttr('id');
-        $('#chat input').focus();
-    }
-    $('#login form').fadeOut();
+
 });
+
+e.preventDefault();
+var user = {
+    username : "Admin"
+};
+socket.emit('user-login', user);
 
 /* Envoi message */
 $('form').on('submit', function(e){

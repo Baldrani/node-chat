@@ -8,30 +8,18 @@ var fs =require('fs')
 var port = process.env.PORT || 3000
 
 
-// room par défaut
-// var roomname = "default"
-// var used_rooms = []
 // les utilisateurs qui sont déjà connectés
-room_id = 34
-
-var usernames = {}
+var clients = [];
 
 /* ~~~~ ROUTING ~~~~ */
 //Indique le fichier de base du chat
 app.route('/').get(function(req, res) { res.sendFile(__dirname + '/public/index.html') })
-
-// Idée : créer une route par user
-//app.route('/user*').get(function(req, res) { res.sendFile(__dirname + '/public/index.html') })
-//
-//
 //Indique l'emplacement de client.js
 app.route('/client.js').get(function(req, res){ res.sendFile(__dirname +'/public/client.js') })
-
-// //Indique l'emplacement de
-// app.route('/admin').get(function(req, res) { res.sendFile(__dirname + '/public/admin.html') })
-// //Indique l'emplacement de admin.js
-// app.route('/client.js').get(function(req, res){ res.sendFile(__dirname + '/public/admin.js') })
-
+//Indique le fichier d'admin du chat
+app.route('/admin').get(function(req, res) { res.sendFile(__dirname + '/public/index.html') })
+//Indique le fichier d'admin du chat
+app.route('/admin').get(function(req, res) { res.sendFile(__dirname + '/public/index.html') })
 
 /* ~~~~ SOCKET.IO ~~~~ */
 io.on('connection', function(socket){
@@ -44,16 +32,27 @@ io.on('connection', function(socket){
 
     /** Connexion d'un user
      * - crée un fichier json avec l'id de l'utilisateur
+     * - ajoute le user à la liste des utilisateur connectés
      */
     var basicJsonf = '{ "message": [] }'
     fs.writeFile(__dirname + '/storage/chat/' + socket.id + '.json', basicJsonf, (err) => {
         if (err) throw err
         console.log('It\'s saved!')
     })
+    clients.push(user)
 
+    //BRRRRR QUE C'EST MOCHE !!!
+    if(socket.handshake.headers.refereruri.split('/')[3] == "admin")
+    {
+        /** Connexion de l'admin
+         * - Message à tous
+         */
+    } else {
+
+    }
     /** User inscrit son pseudo
     * - sauvegarde d'un user
-    * - envoi du user sur un chanel
+    * - envoi du user sur une room
     * - broadcast d'un 'service-message'
     */
     socket.on('user-login', function(user){
@@ -105,14 +104,19 @@ io.on('connection', function(socket){
                 console.log(json)
             }
         })
-
         io.to("room"+socket.id).emit('chat-message', message)
+        console.log(clients)
     })
 
     /** Deconnexion d'un user
-    * - broadcast d'un 'service-message'
+    * - broadcast d'un 'service-message' // A MOFIDIER avec un luppiote de connexion ou non
+    * - retire le user de la liste des clients
     */
     socket.on('disconnect', function(){
+        var index = clients.indexOf(user);
+         if (index != -1) {
+             clients.splice(index, 1);
+         }
         if(loggedUser !== undefined){
             serviceMessage = {
                 text: 'User ' + loggedUser.username + ' disconnected',
